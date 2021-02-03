@@ -1,0 +1,159 @@
+---
+version: "2"
+services:
+  deluge:
+    image: linuxserver/deluge
+    container_name: deluge
+    network_mode: bridge
+    ports:
+      - "58846:58846"
+      - "58946:58946"
+      - "58946:58946/udp"
+    expose:
+      - "8112"
+      - "58846"
+      - "58946"
+      - "58946/udp"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK_SET=000
+      - TZ=Europe/Rome
+    volumes:
+      - /grid/1/homedia_stack/deluge/config:/config
+      - /grid/1/homedia_stack/mediaconverter_stack/downloads:/downloads
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.deluge.loadbalancer.server.port=8112"
+      - "traefik.http.routers.deluge.rule=Host(`deluge.asgard.local`)"
+      - "traefik.http.routers.deluge.entrypoints=web"
+    
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    network_mode: bridge
+    expose:
+      - "9117"
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      - /grid/1/homedia_stack/jackett/config:/config
+      - /grid/1/homedia_stack/mediaconverter_stack/downloads/torrent_files:/downloads
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.asgard.local`)"
+      - "traefik.http.routers.jackett.entrypoints=web"
+    
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr_ita
+    network_mode: bridge
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - UMASK_SET=000
+      - TZ=Europe/Rome
+    volumes:
+      - /grid/1/homedia_stack/radarr/config:/config
+      - /mnt/local/Film/ITA:/movies
+      - /grid/1/homedia_stack/mediaconverter_stack/downloads:/downloads
+    expose:
+      - "7878"
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.asgard.local`)"
+      - "traefik.http.routers.radarr.entrypoints=web"
+
+  sonarr:
+    image: ghcr.io/linuxserver/sonarr
+    container_name: sonarr_ita
+    network_mode: bridge
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - UMASK_SET=000
+      - TZ=Europe/Rome
+    volumes:
+      - /grid/1/homedia_stack/sonarr_ita/config:/config
+      - /mnt/NAS/SerieTV:/tv
+      - /grid/1/homedia_stack/mediaconverter_stack/downloads:/downloads
+    expose:
+      - "8989"
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.asgard.local`)"
+      - "traefik.http.routers.sonarr.entrypoints=web"
+
+  sonarr_eng:
+    image: ghcr.io/linuxserver/sonarr
+    container_name: sonarr_eng
+    network_mode: bridge
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - UMASK_SET=000
+      - TZ=Europe/Rome
+    volumes:
+      - /grid/1/homedia_stack/sonarr_eng/config:/config
+      - /mnt/NAS/SerieTV:/tv
+      - /grid/1/homedia_stack/mediaconverter_stack/downloads:/downloads
+    expose:
+      - "8989"
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.sonarreng.loadbalancer.server.port=8989"
+      - "traefik.http.routers.sonarreng.rule=Host(`sonarr-eng.asgard.local`)"
+      - "traefik.http.routers.sonarreng.entrypoints=web"
+  
+  plex:
+    image: ghcr.io/linuxserver/plex
+    container_name: plex
+    network_mode: bridge
+    ports:
+    - "32400:32400/tcp"
+    - "3005:3005/tcp"
+    - "8324:8324/tcp"
+    - "32469:32469/tcp"
+    - "1900:1900/udp"
+    - "32410:32410/udp"
+    - "32412:32412/udp"
+    - "32413:32413/udp"
+    - "32414:32414/udp"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - VERSION=docker
+      - UMASK_SET=022 #optional
+      - ADVERTISE_IP=192.168.88.12
+      - PLEX_CLAIM="claim-WsapS-WcGdjUURcxVUyx" #claim-g-g6xnVhXJMGHasNGuiT 
+    volumes:
+      - /grid/1/homedia_stack/plex:/config
+      - /mnt/NAS/SerieTV:/tv
+      - /mnt/local/Film/:/movies
+    restart: unless-stopped
+
+  flaresolverr:
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: bridge
+    expose:
+      - "8191"
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.flaresolver.loadbalancer.server.port=8191"
+      - "traefik.http.routers.flaresolver.rule=Host(`flaresolver.asgard.local`)"
+      - "traefik.http.routers.flaresolver.entrypoints=web"
+    restart: unless-stopped 
